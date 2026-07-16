@@ -14,7 +14,7 @@ AI_POLLING_TIMEOUT = int(os.getenv("AI_POLLING_TIMEOUT", 60))  # seconds to wait
 
 # ─── Database Configuration ─────────────────────────────────────
 # 'sqlite' (zero configuration, works out of the box) or 'mysql'
-DB_TYPE = os.getenv("DB_TYPE", "mysql")
+DB_TYPE = os.getenv("DB_TYPE", "sqlite")
 SQLITE_DB_PATH = os.getenv("SQLITE_DB_PATH", os.path.join(os.path.dirname(__file__), "db", "hospitals.db"))
 
 # ─── MySQL Database ──────────────────────────────────────────────
@@ -22,7 +22,7 @@ DB_CONFIG = {
     "host": os.getenv("DB_HOST", "localhost"),
     "port": int(os.getenv("DB_PORT", 3306)),
     "user": os.getenv("DB_USER", "root"),
-    "password": os.getenv("DB_PASSWORD", "1234"),
+    "password": os.getenv("DB_PASSWORD", ""),
     "database": os.getenv("DB_NAME", "hospitals"),
 }
 
