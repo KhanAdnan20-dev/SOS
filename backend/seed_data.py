@@ -7,7 +7,7 @@ Run once:   python seed_data.py
 import sqlite3
 from config import DB_TYPE, SQLITE_DB_PATH, DB_CONFIG
 
-# ─── Delhi Ambulance Fleet (10 units) ──────────────────────────
+# ─── Delhi + Mumbai Ambulance Fleet (25 units total) ───────────
 AMBULANCES = [
     ("AMB-001", "DL-01-AB-1234", 28.6139, 77.2090, "AVAILABLE", "ALS"),   # Connaught Place
     ("AMB-002", "DL-02-CD-5678", 28.5355, 77.2510, "AVAILABLE", "BLS"),   # Saket
@@ -19,9 +19,25 @@ AMBULANCES = [
     ("AMB-008", "DL-08-OP-0123", 28.5494, 77.1855, "AVAILABLE", "BLS"),   # Vasant Kunj
     ("AMB-009", "DL-09-QR-4567", 28.6280, 77.3649, "AVAILABLE", "ALS"),   # Anand Vihar
     ("AMB-010", "DL-10-ST-8901", 28.4595, 77.0266, "AVAILABLE", "BLS"),   # Gurgaon
+    # ─── Mumbai Units (15 ambulances) ─────────────────────────────
+    ("AMB-MUM-011", "MH-01-AB-1111", 19.0544, 72.8402, "AVAILABLE", "ALS"),  # Bandra
+    ("AMB-MUM-012", "MH-01-CD-2222", 19.0178, 72.8478, "AVAILABLE", "ALS"),  # Dadar
+    ("AMB-MUM-013", "MH-02-EF-3333", 19.1136, 72.8697, "AVAILABLE", "ALS"),  # Andheri
+    ("AMB-MUM-014", "MH-02-GH-4444", 19.1020, 72.8267, "AVAILABLE", "BLS"),  # Juhu
+    ("AMB-MUM-015", "MH-03-IJ-5555", 19.0657, 72.8777, "AVAILABLE", "ALS"),  # Kurla
+    ("AMB-MUM-016", "MH-01-KL-6666", 18.9400, 72.8353, "AVAILABLE", "ALS"),  # CSMT / Fort
+    ("AMB-MUM-017", "MH-03-MN-7777", 19.1197, 72.9051, "AVAILABLE", "BLS"),  # Powai
+    ("AMB-MUM-018", "MH-04-OP-8888", 19.2307, 72.8567, "AVAILABLE", "ALS"),  # Borivali
+    ("AMB-MUM-019", "MH-04-QR-9999", 19.2183, 72.9781, "AVAILABLE", "ALS"),  # Thane
+    ("AMB-MUM-020", "MH-43-ST-0001", 19.0330, 73.0297, "AVAILABLE", "ALS"),  # Navi Mumbai
+    ("AMB-MUM-021", "MH-01-UV-0002", 18.9067, 72.8147, "AVAILABLE", "BLS"),  # Colaba
+    ("AMB-MUM-022", "MH-01-WX-0003", 19.0180, 72.8181, "AVAILABLE", "ALS"),  # Worli
+    ("AMB-MUM-023", "MH-03-YZ-0004", 19.0860, 72.9090, "AVAILABLE", "BLS"),  # Ghatkopar
+    ("AMB-MUM-024", "MH-02-AB-0005", 19.1874, 72.8484, "AVAILABLE", "ALS"),  # Malad
+    ("AMB-MUM-025", "MH-02-CD-0006", 19.1633, 72.8467, "AVAILABLE", "BLS"),  # Goregaon
 ]
 
-# ─── Delhi/NCR Hospitals (22 hospitals) ─────────────────────────
+# ─── Delhi/NCR + Mumbai Hospitals (52 hospitals total) ──────────
 HOSPITALS = [
     (
         "HOSP-001", "AIIMS New Delhi",
@@ -154,6 +170,187 @@ HOSPITALS = [
         28.5878, 77.0423,
         "cardiac,trauma,stroke,general",
         13, "AVAILABLE", 0,
+    ),
+    # ─── Mumbai Hospitals (30 hospitals) ──────────────────────────
+    (
+        "HOSP-023", "Lilavati Hospital Bandra West",
+        19.0510, 72.8290,
+        "trauma,cardiac,stroke,burn,general,obstetric",
+        18, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-024", "P. D. Hinduja Hospital Mahim",
+        19.0345, 72.8386,
+        "cardiac,stroke,trauma,general,respiratory",
+        15, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-025", "Kokilaben Ambani Hospital Andheri",
+        19.1315, 72.8250,
+        "trauma,cardiac,stroke,burn,poisoning,general",
+        25, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-026", "Nanavati Max Super Speciality Vile Parle",
+        19.0965, 72.8402,
+        "cardiac,trauma,stroke,general,obstetric",
+        20, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-027", "Saifee Hospital Charni Road",
+        18.9517, 72.8183,
+        "cardiac,trauma,general,respiratory",
+        12, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-028", "Sir H. N. Reliance Hospital Girgaon",
+        18.9585, 72.8195,
+        "trauma,cardiac,stroke,burn,general,poisoning",
+        22, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-029", "Breach Candy Hospital Cumballa Hill",
+        18.9719, 72.8051,
+        "cardiac,stroke,general,obstetric",
+        14, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-030", "Sir J. J. Hospital Byculla",
+        18.9634, 72.8339,
+        "trauma,burn,general,poisoning,respiratory,obstetric",
+        30, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-031", "KEM Hospital Parel",
+        19.0025, 72.8424,
+        "trauma,cardiac,stroke,burn,poisoning,general",
+        35, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-032", "Tata Memorial Hospital Parel",
+        19.0048, 72.8428,
+        "general,respiratory,trauma",
+        16, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-033", "Jaslok Hospital Pedder Road",
+        18.9715, 72.8089,
+        "cardiac,stroke,trauma,general",
+        14, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-034", "Bombay Hospital Marine Lines",
+        18.9405, 72.8298,
+        "trauma,cardiac,general,respiratory",
+        18, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-035", "Wockhardt Hospital Mumbai Central",
+        18.9740, 72.8226,
+        "cardiac,stroke,trauma,burn,general",
+        20, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-036", "Fortis Hospital Mulund",
+        19.1663, 72.9430,
+        "cardiac,trauma,stroke,general,respiratory",
+        22, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-037", "Dr. L. H. Hiranandani Hospital Powai",
+        19.1197, 72.9154,
+        "cardiac,trauma,general,obstetric",
+        16, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-038", "Holy Family Hospital Bandra West",
+        19.0566, 72.8248,
+        "general,cardiac,obstetric,respiratory",
+        10, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-039", "SL Raheja Hospital Mahim",
+        19.0435, 72.8430,
+        "cardiac,trauma,general,burn",
+        12, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-040", "Global Hospital Parel",
+        18.9972, 72.8390,
+        "cardiac,stroke,trauma,general",
+        15, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-041", "Bhaktivedanta Hospital Mira Road",
+        19.2805, 72.8682,
+        "trauma,general,cardiac,obstetric",
+        14, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-042", "Jupiter Hospital Thane",
+        19.2136, 72.9734,
+        "cardiac,stroke,trauma,burn,general",
+        24, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-043", "Apollo Hospital CBD Belapur Navi Mumbai",
+        19.0169, 73.0406,
+        "trauma,cardiac,stroke,burn,general,poisoning",
+        20, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-044", "Fortis Hiranandani Hospital Vashi",
+        19.0715, 72.9984,
+        "cardiac,trauma,general,respiratory",
+        14, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-045", "MGM Hospital Vashi",
+        19.0768, 73.0034,
+        "trauma,general,obstetric,burn",
+        18, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-046", "S. L. Nairs Hospital Mumbai Central",
+        18.9745, 72.8235,
+        "trauma,general,poisoning,respiratory",
+        16, "UNAVAILABLE", 35,   # ← On OT diversion
+    ),
+    (
+        "HOSP-047", "Sion Hospital (LTMGH) Sion",
+        19.0360, 72.8601,
+        "trauma,cardiac,burn,general,obstetric",
+        32, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-048", "Cooper Hospital Juhu",
+        19.1085, 72.8368,
+        "trauma,general,poisoning,obstetric",
+        20, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-049", "Rajawadi Hospital Ghatkopar",
+        19.0833, 72.9067,
+        "trauma,general,burn,respiratory",
+        15, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-050", "Bhabha Hospital Bandra West",
+        19.0612, 72.8324,
+        "trauma,general,obstetric",
+        12, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-051", "Karuna Hospital Borivali",
+        19.2372, 72.8533,
+        "cardiac,trauma,general",
+        11, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-052", "Apex Multispeciality Hospital Borivali",
+        19.2312, 72.8590,
+        "general,cardiac,trauma",
+        10, "AVAILABLE", 0,
     ),
 ]
 
