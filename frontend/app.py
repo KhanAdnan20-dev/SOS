@@ -410,8 +410,12 @@ with tab_dispatch:
                     time.sleep(0.5)
 
                 # Automated Live Polling & Animation Loop synchronized with backend simulator (`simulate_movement`)
-                max_polls = 100  # Safety bound (`~2.5 minutes` at 1.5s tick rate)
+                # Automated Live Polling & Animation Loop synchronized with backend simulator (`simulate_movement`)
+                max_polls = 200  # Safety bound (`~5 minutes` at 1.5s tick rate)
                 prev_lon, prev_lat = caller_lon, caller_lat
+                initial_dist_to_patient = max(0.1, distance_km([route_pts[0][0], route_pts[0][1]], [caller_lon, caller_lat])) if route_pts else 1.0
+                initial_dist_to_hosp = max(0.1, distance_km([caller_lon, caller_lat], [hosp_pos[0], hosp_pos[1]]))
+                
                 for step in range(max_polls):
                     try:
                         # Pull latest live coordinates directly from MySQL / Backend API
@@ -422,12 +426,11 @@ with tab_dispatch:
                     except Exception:
                         cur_lon = amb.get("amb_longitude", caller_lon)
                         cur_lat = amb.get("amb_latitude", caller_lat)
-                        cur_status = "EN ROUTE (SYNCING...)"
+                        cur_status = "EN_ROUTE_TO_PATIENT"
                     
-                    # Calculate approximate progress & speed for telemetry overlay
-                    total_pts = len(route_pts) if route_pts else 1
-                    progress_pct = min(1.0, (step + 1) / max(10, total_pts / 3))
-                    sim_speed = round(38.0 + (math.sin(step) * 12.0), 1) if cur_status != "AVAILABLE" else 0.0
+                    # Calculate true physical distances right now
+                    dist_to_caller = distance_km([cur_lon, cur_lat], [caller_lon, caller_lat])
+                    dist_to_hosp = distance_km([cur_lon, cur_lat], [hosp_pos[0], hosp_pos[1]])
                     
                     # Calculate road bearing/heading so vehicle icon rotates along every twist and turn
                     d_lon = cur_lon - prev_lon
@@ -437,9 +440,44 @@ with tab_dispatch:
                         prev_lon, prev_lat = cur_lon, cur_lat
                     else:
                         heading = amb_data.get("heading", 0)
-                    
-                    # 4. Check Mission Completion Finishing Symbol (`Hospital Handover` at ER)
-                    if progress_pct >= 0.98 or cur_status == "AVAILABLE" or step > max_polls - 3:
+                        
+                    sim_speed = round(38.0 + (math.sin(step) * 12.0), 1) if cur_status != "AVAILABLE" else 0.0
+
+                    # 1. Determine Phase right from exact status and physical distance
+                    if cur_status == "AT_SCENE" or (cur_status in ["DISPATCHED", "EN_ROUTE_TO_PATIENT"] and dist_to_caller <= 0.06):
+                        # At Scene stabilizing patient
+                        target_lon, target_lat = caller_lon, caller_lat
+                        phase_label = "🛑 ON SCENE: PARAMEDICS STABILIZING & LOADING PATIENT"
+                        amb_color = [255, 45, 85, 255]       # Pulsing Crimson/White
+                        amb_badge = "🛑"
+                        show_patient = True                  # Patient stays visible on scene during boarding!
+                        progress_pct = 0.50
+                        path1_color = [255, 140, 0, 240]
+                        path2_color = [0, 255, 180, 240]
+                    elif cur_status in ["EN_ROUTE_TO_HOSPITAL"] or (dist_to_caller <= 0.06 and step > 8 and cur_status != "EN_ROUTE_TO_PATIENT"):
+                        # Phase 2: Heading to Hospital
+                        target_lon, target_lat = hosp_pos[0], hosp_pos[1]
+                        phase_label = f"🚨 PHASE 2: CRITICAL ICU LIFE SUPPORT IN TRANSIT -> {hosp.get('name', 'HOSPITAL').upper()}"
+                        amb_color = [0, 230, 168, 255]       # Bright Medical Cyan / Emerald ICU
+                        amb_badge = "🚨"
+                        show_patient = False                 # Patient safely boarded inside transport bay!
+                        progress_pct = min(0.97, 0.52 + 0.45 * (1.0 - min(1.0, dist_to_hosp / initial_dist_to_hosp)))
+                        path1_color = [110, 115, 125, 90]    # Faded completed rescue leg
+                        path2_color = [0, 255, 180, 245]     # Active transfer corridor
+                    else:
+                        # Phase 1: En Route to Patient
+                        target_lon, target_lat = caller_lon, caller_lat
+                        phase_label = "🚑 PHASE 1: RESPONDING TO SCENE (EN ROUTE TO PATIENT)"
+                        amb_color = [255, 193, 7, 255]       # Flashing Emergency Amber
+                        amb_badge = "🚑"
+                        show_patient = True                  # Patient tracking symbol stays visible 100% of the way!
+                        progress_pct = min(0.48, max(0.02, 0.48 * (1.0 - min(1.0, dist_to_caller / initial_dist_to_patient))))
+                        path1_color = [255, 140, 0, 240]     # High-intensity Tactical Orange
+                        path2_color = [0, 230, 168, 150]     # Preview Clinical Cyan Transfer Corridor
+
+                    # 2. Check Mission Completion Finishing Symbol (`Hospital Handover` at ER)
+                    # Only complete when physically at hospital (`dist_to_hosp <= 0.06` during Phase 2) or released!
+                    if (cur_status == "AVAILABLE" and step > 10) or (step > 15 and dist_to_hosp <= 0.06 and not show_patient) or step > max_polls - 2:
                         with telemetry_placeholder.container():
                             st.success(f"🏁 MISSION ACCOMPLISHED — PATIENT SAFELY TRANSFERRED TO ICU TRAUMA BAY (`{hosp.get('name')}`) | UNIT RELEASED TO STANDBY")
                         
@@ -473,32 +511,6 @@ with tab_dispatch:
                             map_style="dark"
                         ))
                         break
-                    
-                    # Determine Dynamic Clinical State Shifts (Phase 1 vs At-Scene vs Phase 2)
-                    if progress_pct < 0.48:
-                        target_lon, target_lat = caller_lon, caller_lat
-                        phase_label = "🚑 PHASE 1: RESPONDING TO SCENE (EMPTY TRANSPORT)"
-                        amb_color = [255, 193, 7, 255]       # Flashing Emergency Amber
-                        amb_badge = "🚑"
-                        show_patient = True
-                        path1_color = [255, 140, 0, 240]     # High-intensity Tactical Orange
-                        path2_color = [0, 230, 168, 150]     # Preview Clinical Cyan Transfer Corridor
-                    elif 0.48 <= progress_pct <= 0.53 or cur_status == "AT_SCENE":
-                        target_lon, target_lat = caller_lon, caller_lat
-                        phase_label = "🛑 ON SCENE: PARAMEDICS STABILIZING & LOADING PATIENT"
-                        amb_color = [255, 45, 85, 255]       # Pulsing Crimson/White
-                        amb_badge = "🛑"
-                        show_patient = True
-                        path1_color = [255, 140, 0, 240]
-                        path2_color = [0, 255, 180, 240]
-                    else:
-                        target_lon, target_lat = hosp_pos[0], hosp_pos[1]
-                        phase_label = f"🚨 PHASE 2: CRITICAL ICU LIFE SUPPORT IN TRANSIT -> {hosp.get('name', 'HOSPITAL').upper()}"
-                        amb_color = [0, 230, 168, 255]       # Bright Medical Cyan / Emerald ICU
-                        amb_badge = "🚨"
-                        show_patient = False                 # 3. Patient boarded & vanishes from pavement!
-                        path1_color = [110, 115, 125, 90]    # Faded completed rescue leg
-                        path2_color = [0, 255, 180, 245]     # Active transfer corridor
                     
                     # Trace live remaining distance using Haversine formula
                     dist_rem_km = distance_km([cur_lon, cur_lat], [target_lon, target_lat])

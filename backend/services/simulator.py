@@ -14,7 +14,7 @@ import asyncio
 import math
 import time
 from services.routing import Route, RouteStep
-from db.fleet_db import update_ambulance_position
+from db.fleet_db import update_ambulance_position, update_ambulance_status
 from config import SIMULATION_TICK_INTERVAL
 
 
@@ -115,12 +115,16 @@ async def simulate_movement(
                     room=dispatch_id,
                 )
 
-                # Also update the DB so REST polling clients get fresh data
-                update_ambulance_position(ambulance_id, pos[0], pos[1])
+                # Also update the DB so REST polling clients get fresh accurate status & data
+                db_status = "EN_ROUTE_TO_PATIENT" if phase == "TO_PATIENT" else "EN_ROUTE_TO_HOSPITAL"
+                update_ambulance_position(ambulance_id, pos[0], pos[1], status=db_status)
 
                 await asyncio.sleep(SIMULATION_TICK_INTERVAL)
 
-    # Final event: ambulance has arrived
+    # Final event: ambulance has arrived at phase target
+    if phase == "TO_PATIENT":
+        update_ambulance_status(ambulance_id, "AT_SCENE")
+
     await sio.emit(
         "ambulance_arrived",
         {

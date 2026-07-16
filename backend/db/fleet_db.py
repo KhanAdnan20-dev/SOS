@@ -47,9 +47,23 @@ def release_ambulance(ambulance_id: str) -> None:
     )
 
 
-def update_ambulance_position(ambulance_id: str, lat: float, lng: float) -> None:
-    """Update the live position of an ambulance in the DB."""
+def update_ambulance_position(ambulance_id: str, lat: float, lng: float, status: str = None) -> None:
+    """Update the live position and optional status of an ambulance in the DB."""
+    if status:
+        execute(
+            "UPDATE ambulances SET amb_latitude = %s, amb_longitude = %s, status = %s WHERE ambulance_id = %s",
+            (lat, lng, status, ambulance_id),
+        )
+    else:
+        execute(
+            "UPDATE ambulances SET amb_latitude = %s, amb_longitude = %s WHERE ambulance_id = %s",
+            (lat, lng, ambulance_id),
+        )
+
+
+def update_ambulance_status(ambulance_id: str, status: str) -> None:
+    """Update the clinical state/status of an ambulance in the DB."""
     execute(
-        "UPDATE ambulances SET amb_latitude = %s, amb_longitude = %s WHERE ambulance_id = %s",
-        (lat, lng, ambulance_id),
+        "UPDATE ambulances SET status = %s WHERE ambulance_id = %s",
+        (status, ambulance_id),
     )

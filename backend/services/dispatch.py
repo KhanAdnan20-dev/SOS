@@ -19,31 +19,36 @@ def _find_closest_ambulance(
     user_lat: float,
     user_lng: float,
     tier: str | None = None,
+    urgency: str = "HIGH",
 ) -> dict | None:
     """
-    From all AVAILABLE ambulances (optionally filtered by tier),
-    return the one closest to the user's location.
+    Find the optimal ambulance using a Multi-Factor CAD Triage Score:
+    Score = Road/Geodesic Distance (km) - ALS Clinical Bonus (if critical) + Status Readiness
     """
     ambulances = get_available_ambulances(tier=tier)
     if not ambulances:
-        # If no ALS available, fall back to any available ambulance
         if tier:
             ambulances = get_available_ambulances(tier=None)
         if not ambulances:
             return None
 
     user_pos = (user_lat, user_lng)
-    closest = None
-    min_dist = float("inf")
+    best_amb = None
+    best_score = float("inf")
 
     for amb in ambulances:
         amb_pos = (amb["amb_latitude"], amb["amb_longitude"])
-        dist = geodesic(user_pos, amb_pos).km
-        if dist < min_dist:
-            min_dist = dist
-            closest = amb
+        dist_km = geodesic(user_pos, amb_pos).km
+        
+        # Multi-factor weighting: ALS units get a priority discount for High/Critical calls
+        tier_bonus = 2.5 if (amb.get("tier") == "ALS" and urgency in ["CRITICAL", "HIGH"]) else 0.0
+        score = dist_km - tier_bonus
+        
+        if score < best_score:
+            best_score = score
+            best_amb = amb
 
-    return closest
+    return best_amb
 
 
 def _find_best_hospital(
@@ -52,28 +57,35 @@ def _find_best_hospital(
     user_lng: float,
 ) -> dict | None:
     """
-    Find the closest hospital that can handle this emergency type,
-    has ICU beds, and is not on OT diversion.
+    Find the optimal destination hospital using a Multi-Factor Clinical Triage Score:
+    Score = (Distance_km * 1.2) - (ICU Beds Available * 0.3) + (OT Diversion Penalty)
+    Considers shortest distance while preventing ER crowding and ICU shortages.
     """
     hospitals = find_capable_hospitals(medical_tag)
     if not hospitals:
-        # Fallback: any available hospital
         hospitals = find_all_available_hospitals()
     if not hospitals:
         return None
 
     user_pos = (user_lat, user_lng)
-    closest = None
-    min_dist = float("inf")
+    best_hosp = None
+    best_score = float("inf")
 
     for hosp in hospitals:
         hosp_pos = (hosp["latitude"], hosp["longitude"])
-        dist = geodesic(user_pos, hosp_pos).km
-        if dist < min_dist:
-            min_dist = dist
-            closest = hosp
+        dist_km = geodesic(user_pos, hosp_pos).km
+        
+        icu_beds = hosp.get("icu_beds_available", 0) or 0
+        ot_penalty = 15.0 if hosp.get("ot_status") == "UNAVAILABLE" else 0.0
+        
+        # Multi-factor score: Shortest distance weighted against ICU capacity and OT clearance
+        score = (dist_km * 1.2) - (icu_beds * 0.3) + ot_penalty
+        
+        if score < best_score:
+            best_score = score
+            best_hosp = hosp
 
-    return closest
+    return best_hosp
 
 
 def dispatch(
@@ -104,7 +116,7 @@ def dispatch(
               f"(confidence: {ai_result['confidence']}), dispatching anyway.")
 
     # ── Step 2: Find closest available ambulance ───────────────
-    ambulance = _find_closest_ambulance(user_lat, user_lng, tier=required_tier)
+    ambulance = _find_closest_ambulance(user_lat, user_lng, tier=required_tier, urgency=urgency)
     if not ambulance:
         raise ValueError("No ambulances available right now.")
 
