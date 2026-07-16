@@ -21,7 +21,7 @@ AMBULANCES = [
     ("AMB-010", "DL-10-ST-8901", 28.4595, 77.0266, "AVAILABLE", "BLS"),   # Gurgaon
 ]
 
-# ─── Delhi Hospitals (8 hospitals) ─────────────────────────────
+# ─── Delhi/NCR Hospitals (22 hospitals) ─────────────────────────
 HOSPITALS = [
     (
         "HOSP-001", "AIIMS New Delhi",
@@ -63,13 +63,97 @@ HOSPITALS = [
         "HOSP-007", "Lok Nayak Hospital",
         28.6363, 77.2398,
         "trauma,cardiac,general,poisoning,respiratory",
-        9, "UNAVAILABLE", 30,    # ← This one is on OT diversion
+        9, "UNAVAILABLE", 30,    # ← On OT diversion
     ),
     (
         "HOSP-008", "Apollo Hospital (Jasola)",
         28.5354, 77.2826,
         "cardiac,stroke,trauma,burn,obstetric,general",
         11, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-009", "BLK-Max Super Speciality Hospital",
+        28.6432, 77.1785,
+        "trauma,cardiac,stroke,burn,general",
+        14, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-010", "Fortis Memorial Research Gurgaon",
+        28.4582, 77.0726,
+        "cardiac,stroke,trauma,general,obstetric",
+        18, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-011", "Medanta - The Medicity Gurgaon",
+        28.4385, 77.0425,
+        "cardiac,trauma,stroke,burn,poisoning,general",
+        25, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-012", "Indraprastha Apollo Sarita Vihar",
+        28.5323, 77.2882,
+        "trauma,cardiac,stroke,burn,general",
+        12, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-013", "Artemis Hospital Gurgaon",
+        28.4326, 77.0689,
+        "cardiac,trauma,stroke,respiratory,general",
+        10, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-014", "Max Super Speciality Patparganj",
+        28.6295, 77.3065,
+        "cardiac,trauma,general,respiratory",
+        9, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-015", "Jaypee Hospital Noida",
+        28.5085, 77.3712,
+        "trauma,cardiac,burn,general,obstetric",
+        16, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-016", "Kailash Hospital Noida Sec 27",
+        28.5796, 77.3274,
+        "cardiac,trauma,general,respiratory",
+        8, "UNAVAILABLE", 25,
+    ),
+    (
+        "HOSP-017", "Amrita Hospital Faridabad",
+        28.4116, 77.3375,
+        "trauma,cardiac,stroke,burn,poisoning,obstetric,general",
+        30, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-018", "Holy Family Hospital Okhla",
+        28.5601, 77.2798,
+        "trauma,general,obstetric,respiratory",
+        7, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-019", "Moolchand Medcity",
+        28.5668, 77.2343,
+        "cardiac,general,obstetric,stroke",
+        6, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-020", "RML Hospital (Ram Manohar Lohia)",
+        28.6262, 77.2001,
+        "trauma,cardiac,burn,poisoning,general",
+        11, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-021", "Rajiv Gandhi Super Speciality",
+        28.6948, 77.3142,
+        "cardiac,respiratory,general",
+        15, "AVAILABLE", 0,
+    ),
+    (
+        "HOSP-022", "Venkateshwar Hospital Dwarka",
+        28.5878, 77.0423,
+        "cardiac,trauma,stroke,general",
+        13, "AVAILABLE", 0,
     ),
 ]
 

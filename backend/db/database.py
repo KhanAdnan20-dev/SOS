@@ -74,10 +74,10 @@ def _init_sqlite_schema(conn: sqlite3.Connection):
     """)
     conn.commit()
 
-    # Check if we need to seed initial data
-    cursor.execute("SELECT COUNT(*) as cnt FROM ambulances")
+    # Check if we need to seed initial data or upgrade to 22 hospitals
+    cursor.execute("SELECT COUNT(*) as cnt FROM hospitals")
     row = cursor.fetchone()
-    if row and row[0] == 0:
+    if not row or row[0] < 20:
         from seed_data import seed_sqlite_direct
         seed_sqlite_direct(conn)
 
