@@ -17,6 +17,12 @@ class DistressRequest(BaseModel):
     user_longitude: float = Field(..., ge=-180, le=180)
 
 
+class HospitalUpdateRequest(BaseModel):
+    """Dynamic override payload for hospital ICU capacity and OT status."""
+    icu_beds_available: int = Field(..., ge=0)
+    ot_status: str = Field(..., description="AVAILABLE or UNAVAILABLE")
+
+
 # ──────────────────────── DB Models ────────────────────────────
 
 class AmbulanceOut(BaseModel):

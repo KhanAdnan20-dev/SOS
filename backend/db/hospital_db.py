@@ -45,3 +45,12 @@ def find_all_available_hospitals() -> list[dict]:
         """
     )
 
+
+def update_hospital_capacity(hospital_id: str, icu_beds: int, ot_status: str) -> None:
+    """Update ICU beds and OT diversion status dynamically in real-time."""
+    from db.database import execute
+    execute(
+        "UPDATE hospitals SET icu_beds_available = %s, ot_status = %s WHERE hospital_id = %s",
+        (icu_beds, ot_status, hospital_id),
+    )
+

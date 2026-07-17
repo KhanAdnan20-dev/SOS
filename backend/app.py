@@ -12,11 +12,11 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import SERVER_HOST, SERVER_PORT
-from models.schemas import DistressRequest, DispatchResponse, AmbulanceOut, HospitalOut, AIAnalysis
+from models.schemas import DistressRequest, DispatchResponse, AmbulanceOut, HospitalOut, AIAnalysis, HospitalUpdateRequest
 from services.dispatch import dispatch as run_dispatch
 from services.simulator import simulate_movement
 from db.fleet_db import get_all_ambulances, get_ambulance, release_ambulance
-from db.hospital_db import get_all_hospitals
+from db.hospital_db import get_all_hospitals, update_hospital_capacity
 from db.database import fetch_all
 
 # ────────────────────────────────────────────────────────────────
@@ -168,6 +168,75 @@ async def dispatches_endpoint():
         LIMIT 50
         """
     )
+
+
+@app.post("/api/hospitals/{hospital_id}/update")
+async def hospital_update_endpoint(hospital_id: str, req: HospitalUpdateRequest):
+    """Dynamic override of ICU beds or OT status for real-time triage redirection."""
+    update_hospital_capacity(hospital_id, req.icu_beds_available, req.ot_status)
+    return {"status": "success", "hospital_id": hospital_id, "icu_beds": req.icu_beds_available, "ot_status": req.ot_status}
+
+
+@app.post("/api/fleet/{ambulance_id}/reset")
+async def fleet_reset_endpoint(ambulance_id: str):
+    """Release an ambulance unit back to standby status immediately."""
+    release_ambulance(ambulance_id)
+    return {"status": "success", "ambulance_id": ambulance_id, "message": "Unit reset to AVAILABLE standby"}
+
+
+@app.post("/api/simulate-surge", response_model=list[DispatchResponse])
+async def simulate_surge_endpoint():
+    """
+    Trigger a Multi-Incident City Surge: Dispatches 3 concurrent emergencies across different zones of Mumbai
+    simultaneously, firing off independent real-time OSRM vehicle tracking loops.
+    """
+    surge_cases = [
+        {"patient": "Rajesh Sharma (Surge 1)", "transcript": "Major car pileup on Western Express Highway near Bandra, severe head trauma and unconsciousness.", "lat": 19.0600, "lng": 72.8400},
+        {"patient": "Meena Patel (Surge 2)", "transcript": "Elderly female suffering massive myocardial infarction at Dadar railway station, grasping chest.", "lat": 19.0180, "lng": 72.8430},
+        {"patient": "Vikram Singh (Surge 3)", "transcript": "Industrial boiler explosion near Andheri East, severe third degree burns across torso and arms.", "lat": 19.1190, "lng": 72.8640},
+    ]
+    responses = []
+    for c in surge_cases:
+        try:
+            result = run_dispatch(
+                patient_name=c["patient"],
+                raw_transcript=c["transcript"],
+                user_lat=c["lat"],
+                user_lng=c["lng"],
+            )
+            route_to_patient = result["route_to_patient"]
+            route_to_hospital = result["route_to_hospital"]
+            ambulance = result["ambulance"]
+            hospital = result["hospital"]
+            dispatch_id = result["dispatch_id"]
+
+            async def surge_sim(amb_id, d_id, r_pat, r_hosp):
+                await simulate_movement(sio=sio, dispatch_id=d_id, ambulance_id=amb_id, route=r_pat, phase="TO_PATIENT", speed_multiplier=6.0)
+                await asyncio.sleep(2)
+                await simulate_movement(sio=sio, dispatch_id=d_id, ambulance_id=amb_id, route=r_hosp, phase="TO_HOSPITAL", speed_multiplier=6.0)
+                release_ambulance(amb_id)
+                _active_simulations.pop(d_id, None)
+
+            task = asyncio.create_task(surge_sim(ambulance["ambulance_id"], dispatch_id, route_to_patient, route_to_hospital))
+            _active_simulations[dispatch_id] = task
+
+            responses.append(DispatchResponse(
+                dispatch_id=dispatch_id,
+                incident_id=result["incident_id"],
+                ambulance=AmbulanceOut(**ambulance),
+                hospital=HospitalOut(**hospital),
+                ai_urgency_tier=result["urgency"],
+                ai_medical_tag=result["medical_tag"],
+                estimated_arrival_mins=result["eta_minutes"],
+                route_polyline=route_to_patient.encoded_polyline,
+                route_points=route_to_patient.all_points,
+                route_to_hospital_points=route_to_hospital.all_points,
+                ai_analysis=AIAnalysis(**result["ai_analysis"]),
+                message=f"Surge Unit {ambulance['vehicle_number']} dispatched to {hospital['name']}",
+            ))
+        except Exception as e:
+            print(f"[Surge Error] Could not dispatch case: {e}")
+    return responses
 
 
 # ────────────────────────────────────────────────────────────────
